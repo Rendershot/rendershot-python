@@ -148,6 +148,7 @@ class RenderShotClient(_BaseClient):
         prefix: str,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
+        filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         out = pathlib.Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
@@ -173,7 +174,8 @@ class RenderShotClient(_BaseClient):
         for original_index, job_id in job_ids:
             self._poll_job(job_id, poll_interval=poll_interval, timeout=timeout)
             file_bytes = self._get(f'/v1/jobs/{job_id}/result').content
-            dest = out / f'{prefix}_{original_index:04d}.{ext}'
+            stem = filenames[original_index] if filenames else f'{prefix}_{original_index:04d}'
+            dest = out / f'{stem}.{ext}'
             dest.write_bytes(file_bytes)
             output_paths[original_index] = dest
 
@@ -354,6 +356,7 @@ class RenderShotClient(_BaseClient):
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
+        filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
             {**self._build_screenshot_payload(
@@ -363,7 +366,7 @@ class RenderShotClient(_BaseClient):
             for url in urls
         ]
         ext = format.value
-        return self._bulk_render_and_save(jobs, output_dir, ext, 'screenshot', poll_interval, timeout)
+        return self._bulk_render_and_save(jobs, output_dir, ext, 'screenshot', poll_interval, timeout, filenames)
 
     def bulk_screenshot_htmls(
         self,
@@ -379,6 +382,7 @@ class RenderShotClient(_BaseClient):
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
+        filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
             {**self._build_screenshot_payload(
@@ -388,7 +392,7 @@ class RenderShotClient(_BaseClient):
             for html in htmls
         ]
         ext = format.value
-        return self._bulk_render_and_save(jobs, output_dir, ext, 'screenshot', poll_interval, timeout)
+        return self._bulk_render_and_save(jobs, output_dir, ext, 'screenshot', poll_interval, timeout, filenames)
 
     def bulk_pdf_urls(
         self,
@@ -403,6 +407,7 @@ class RenderShotClient(_BaseClient):
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
+        filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
             {**self._build_pdf_payload(
@@ -411,7 +416,7 @@ class RenderShotClient(_BaseClient):
             ), 'type': 'pdf'}
             for url in urls
         ]
-        return self._bulk_render_and_save(jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout)
+        return self._bulk_render_and_save(jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout, filenames)
 
     def bulk_pdf_htmls(
         self,
@@ -426,6 +431,7 @@ class RenderShotClient(_BaseClient):
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
+        filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
             {**self._build_pdf_payload(
@@ -434,7 +440,7 @@ class RenderShotClient(_BaseClient):
             ), 'type': 'pdf'}
             for html in htmls
         ]
-        return self._bulk_render_and_save(jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout)
+        return self._bulk_render_and_save(jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout, filenames)
 
     def bulk_pdf_from_template(
         self,
@@ -450,6 +456,7 @@ class RenderShotClient(_BaseClient):
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
+        filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         env = jinja2.Environment(autoescape=jinja2.select_autoescape(['html']))
         tmpl = env.from_string(template_str)
@@ -458,7 +465,7 @@ class RenderShotClient(_BaseClient):
             htmls, output_dir,
             format=format, orientation=orientation, margin=margin,
             print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
-            poll_interval=poll_interval, timeout=timeout,
+            poll_interval=poll_interval, timeout=timeout, filenames=filenames,
         )
 
 
@@ -516,6 +523,7 @@ class AsyncRenderShotClient(_BaseClient):
         prefix: str,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
+        filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         out = pathlib.Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
@@ -543,7 +551,8 @@ class AsyncRenderShotClient(_BaseClient):
 
         output_paths: list[pathlib.Path | None] = [None] * len(jobs_payload)
         for original_index, file_bytes in results:
-            dest = out / f'{prefix}_{original_index:04d}.{ext}'
+            stem = filenames[original_index] if filenames else f'{prefix}_{original_index:04d}'
+            dest = out / f'{stem}.{ext}'
             dest.write_bytes(file_bytes)
             output_paths[original_index] = dest
 
@@ -724,6 +733,7 @@ class AsyncRenderShotClient(_BaseClient):
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
+        filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
             {**self._build_screenshot_payload(
@@ -733,7 +743,7 @@ class AsyncRenderShotClient(_BaseClient):
             for url in urls
         ]
         ext = format.value
-        return await self._bulk_render_and_save(jobs, output_dir, ext, 'screenshot', poll_interval, timeout)
+        return await self._bulk_render_and_save(jobs, output_dir, ext, 'screenshot', poll_interval, timeout, filenames)
 
     async def bulk_screenshot_htmls(
         self,
@@ -749,6 +759,7 @@ class AsyncRenderShotClient(_BaseClient):
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
+        filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
             {**self._build_screenshot_payload(
@@ -758,7 +769,7 @@ class AsyncRenderShotClient(_BaseClient):
             for html in htmls
         ]
         ext = format.value
-        return await self._bulk_render_and_save(jobs, output_dir, ext, 'screenshot', poll_interval, timeout)
+        return await self._bulk_render_and_save(jobs, output_dir, ext, 'screenshot', poll_interval, timeout, filenames)
 
     async def bulk_pdf_urls(
         self,
@@ -773,6 +784,7 @@ class AsyncRenderShotClient(_BaseClient):
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
+        filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
             {**self._build_pdf_payload(
@@ -781,7 +793,7 @@ class AsyncRenderShotClient(_BaseClient):
             ), 'type': 'pdf'}
             for url in urls
         ]
-        return await self._bulk_render_and_save(jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout)
+        return await self._bulk_render_and_save(jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout, filenames)
 
     async def bulk_pdf_htmls(
         self,
@@ -796,6 +808,7 @@ class AsyncRenderShotClient(_BaseClient):
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
+        filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
             {**self._build_pdf_payload(
@@ -804,7 +817,7 @@ class AsyncRenderShotClient(_BaseClient):
             ), 'type': 'pdf'}
             for html in htmls
         ]
-        return await self._bulk_render_and_save(jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout)
+        return await self._bulk_render_and_save(jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout, filenames)
 
     async def bulk_pdf_from_template(
         self,
@@ -820,6 +833,7 @@ class AsyncRenderShotClient(_BaseClient):
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
+        filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         env = jinja2.Environment(autoescape=jinja2.select_autoescape(['html']))
         tmpl = env.from_string(template_str)
@@ -828,5 +842,5 @@ class AsyncRenderShotClient(_BaseClient):
             htmls, output_dir,
             format=format, orientation=orientation, margin=margin,
             print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
-            poll_interval=poll_interval, timeout=timeout,
+            poll_interval=poll_interval, timeout=timeout, filenames=filenames,
         )

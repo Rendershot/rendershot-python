@@ -161,6 +161,17 @@ class TestRenderShotClient:
         assert len(paths) == 1
         assert paths[0].suffix == '.pdf'
 
+    def test_bulk_screenshot_urls_with_filenames(self, mock_api: respx.MockRouter, tmp_path: pathlib.Path) -> None:
+        mock_api.post('/v1/bulk').mock(return_value=httpx.Response(200, json=_BULK_RESPONSE))
+        mock_api.get(f'/v1/jobs/{_JOB_ID}').mock(return_value=httpx.Response(200, json=_JOB_DONE))
+        mock_api.get(f'/v1/jobs/{_JOB_ID}/result').mock(return_value=httpx.Response(200, content=_FAKE_PNG))
+
+        client = rendershot.RenderShotClient(_API_KEY)
+        paths = client.bulk_screenshot_urls(
+            ['https://example.com'], tmp_path, filenames=['homepage']
+        )
+        assert paths[0].name == 'homepage.png'
+
     def test_bulk_job_failed(self, mock_api: respx.MockRouter, tmp_path: pathlib.Path) -> None:
         mock_api.post('/v1/bulk').mock(return_value=httpx.Response(200, json=_BULK_RESPONSE))
         mock_api.get(f'/v1/jobs/{_JOB_ID}').mock(return_value=httpx.Response(200, json=_JOB_FAILED))
@@ -271,6 +282,19 @@ class TestAsyncRenderShotClient:
             paths = await client.bulk_pdf_from_template(template, [{'number': 1}], tmp_path)
         assert len(paths) == 1
         assert paths[0].suffix == '.pdf'
+
+    async def test_bulk_screenshot_urls_with_filenames(
+        self, mock_api: respx.MockRouter, tmp_path: pathlib.Path
+    ) -> None:
+        mock_api.post('/v1/bulk').mock(return_value=httpx.Response(200, json=_BULK_RESPONSE))
+        mock_api.get(f'/v1/jobs/{_JOB_ID}').mock(return_value=httpx.Response(200, json=_JOB_DONE))
+        mock_api.get(f'/v1/jobs/{_JOB_ID}/result').mock(return_value=httpx.Response(200, content=_FAKE_PNG))
+
+        async with rendershot.AsyncRenderShotClient(_API_KEY) as client:
+            paths = await client.bulk_screenshot_urls(
+                ['https://example.com'], tmp_path, filenames=['homepage']
+            )
+        assert paths[0].name == 'homepage.png'
 
     async def test_bulk_job_failed(self, mock_api: respx.MockRouter, tmp_path: pathlib.Path) -> None:
         mock_api.post('/v1/bulk').mock(return_value=httpx.Response(200, json=_BULK_RESPONSE))
