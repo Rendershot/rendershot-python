@@ -31,7 +31,7 @@ _BULK_RESPONSE = {
     ],
 }
 
-_JOB_DONE = {'status': 'done', 'job_id': _JOB_ID}
+_JOB_DONE = {'status': 'completed', 'job_id': _JOB_ID}
 _JOB_FAILED = {'status': 'failed', 'job_id': _JOB_ID, 'error': 'render error'}
 
 

@@ -134,10 +134,10 @@ class RenderShotClient(_BaseClient):
                 raise exceptions.JobTimeoutError(job_id, timeout)
             data = self._get(f'/v1/jobs/{job_id}').json()
             status = data.get('status', '')
-            if status == 'done':
+            if status == 'completed':
                 return
             if status == 'failed':
-                raise exceptions.JobFailedError(job_id, data.get('error', 'unknown error'))
+                raise exceptions.JobFailedError(job_id, data.get('error_message', 'unknown error'))
             time.sleep(poll_interval)
 
     def _bulk_render_and_save(
@@ -502,10 +502,10 @@ class AsyncRenderShotClient(_BaseClient):
                 raise exceptions.JobTimeoutError(job_id, timeout)
             data = (await self._get(f'/v1/jobs/{job_id}')).json()
             status = data.get('status', '')
-            if status == 'done':
+            if status == 'completed':
                 return
             if status == 'failed':
-                raise exceptions.JobFailedError(job_id, data.get('error', 'unknown error'))
+                raise exceptions.JobFailedError(job_id, data.get('error_message', 'unknown error'))
             await asyncio.sleep(poll_interval)
 
     async def _bulk_render_and_save(
