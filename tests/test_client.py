@@ -168,7 +168,7 @@ class TestRenderShotClient:
 
         client = rendershot.RenderShotClient(_API_KEY)
         paths = client.bulk_screenshot_urls(
-            ['https://example.com'], tmp_path, filenames=['homepage']
+            ['https://example.com'], tmp_path, filenames=['homepage.png']
         )
         assert paths[0].name == 'homepage.png'
 
@@ -292,7 +292,7 @@ class TestAsyncRenderShotClient:
 
         async with rendershot.AsyncRenderShotClient(_API_KEY) as client:
             paths = await client.bulk_screenshot_urls(
-                ['https://example.com'], tmp_path, filenames=['homepage']
+                ['https://example.com'], tmp_path, filenames=['homepage.png']
             )
         assert paths[0].name == 'homepage.png'
 

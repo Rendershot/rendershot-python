@@ -174,8 +174,7 @@ class RenderShotClient(_BaseClient):
         for original_index, job_id in job_ids:
             self._poll_job(job_id, poll_interval=poll_interval, timeout=timeout)
             file_bytes = self._get(f'/v1/jobs/{job_id}/result').content
-            stem = filenames[original_index] if filenames else f'{prefix}_{original_index:04d}'
-            dest = out / f'{stem}.{ext}'
+            dest = out / (filenames[original_index] if filenames else f'{prefix}_{original_index:04d}.{ext}')
             dest.write_bytes(file_bytes)
             output_paths[original_index] = dest
 
@@ -551,8 +550,7 @@ class AsyncRenderShotClient(_BaseClient):
 
         output_paths: list[pathlib.Path | None] = [None] * len(jobs_payload)
         for original_index, file_bytes in results:
-            stem = filenames[original_index] if filenames else f'{prefix}_{original_index:04d}'
-            dest = out / f'{stem}.{ext}'
+            dest = out / (filenames[original_index] if filenames else f'{prefix}_{original_index:04d}.{ext}')
             dest.write_bytes(file_bytes)
             output_paths[original_index] = dest
 
