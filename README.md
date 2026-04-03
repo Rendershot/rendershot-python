@@ -80,20 +80,20 @@ Some URLs never reach `networkidle` (e.g. sites with persistent WebSocket connec
 ```python
 # Single URL — retries automatically on timeout
 png = client.screenshot_url(
-    'https://sport5.co.il',
+    'https://example.com',
     timeout_fallback_to='domcontentloaded',
 )
 
 # Save to file
 client.screenshot_url_to_file(
-    'https://sport5.co.il',
+    'https://example.com',
     'sport5.png',
     timeout_fallback_to='domcontentloaded',
 )
 
 # Bulk — each timed-out job is individually retried
 paths = client.bulk_screenshot_urls(
-    urls=['https://sport5.co.il', 'https://example.com'],
+    urls=['https://example.com', 'https://example2.com'],
     output_dir='./screenshots',
     timeout_fallback_to='domcontentloaded',
 )
