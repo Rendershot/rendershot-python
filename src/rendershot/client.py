@@ -20,6 +20,9 @@ class _BaseClient:
         self._base_url = base_url.rstrip('/')
         self._headers = {'X-API-Key': api_key}
 
+    def _is_timeout_error(self, exc: exceptions.APIError) -> bool:
+        return exc.status_code == 500 and 'Timeout' in exc.detail
+
     def _raise_for_status(self, response: httpx.Response) -> None:
         if response.status_code < 400:
             return
@@ -149,6 +152,7 @@ class RenderShotClient(_BaseClient):
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
+        fallback_to_domcontentloaded: bool = False,
     ) -> list[pathlib.Path]:
         out = pathlib.Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
@@ -156,8 +160,8 @@ class RenderShotClient(_BaseClient):
         # Split into batches of 20
         batches = [jobs_payload[i : i + _BULK_BATCH_SIZE] for i in range(0, len(jobs_payload), _BULK_BATCH_SIZE)]
 
-        # (original_index, job_id) pairs
-        job_ids: list[tuple[int, str]] = []
+        # (original_index, job_id, payload) triples
+        job_entries: list[tuple[int, str, dict[str, object]]] = []
         global_offset = 0
 
         for batch in batches:
@@ -166,14 +170,23 @@ class RenderShotClient(_BaseClient):
             for result in bulk.jobs:
                 original_index = global_offset + result.index
                 if result.job_id:
-                    job_ids.append((original_index, result.job_id))
+                    job_entries.append((original_index, result.job_id, jobs_payload[original_index]))
             global_offset += len(batch)
 
         # Poll and download each job
         output_paths: list[pathlib.Path | None] = [None] * len(jobs_payload)
-        for original_index, job_id in job_ids:
-            self._poll_job(job_id, poll_interval=poll_interval, timeout=timeout)
-            file_bytes = self._get(f'/v1/jobs/{job_id}/result').content
+        for original_index, job_id, payload in job_entries:
+            try:
+                self._poll_job(job_id, poll_interval=poll_interval, timeout=timeout)
+                file_bytes = self._get(f'/v1/jobs/{job_id}/result').content
+            except exceptions.JobFailedError as exc:
+                if fallback_to_domcontentloaded and 'Timeout' in str(exc):
+                    retry = self._post('/v1/bulk', {'jobs': [{**payload, 'wait_for': 'domcontentloaded'}]})
+                    retry_job_id = models.BulkRenderResponse.model_validate(retry.json()).jobs[0].job_id
+                    self._poll_job(retry_job_id, poll_interval=poll_interval, timeout=timeout)
+                    file_bytes = self._get(f'/v1/jobs/{retry_job_id}/result').content
+                else:
+                    raise
             dest = out / (filenames[original_index] if filenames else f'{prefix}_{original_index:04d}.{ext}')
             dest.write_bytes(file_bytes)
             output_paths[original_index] = dest
@@ -193,12 +206,19 @@ class RenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'networkidle',
         delay_ms: int = 0,
+        fallback_to_domcontentloaded: bool = False,
     ) -> bytes:
         payload = self._build_screenshot_payload(
             url=url, format=format, quality=quality, viewport=viewport,
             full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
         )
-        return self._post('/v1/screenshot', payload).content
+        try:
+            return self._post('/v1/screenshot', payload).content
+        except exceptions.APIError as exc:
+            if fallback_to_domcontentloaded and self._is_timeout_error(exc):
+                payload['wait_for'] = 'domcontentloaded'
+                return self._post('/v1/screenshot', payload).content
+            raise
 
     def screenshot_url_to_file(
         self,
@@ -212,10 +232,12 @@ class RenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'networkidle',
         delay_ms: int = 0,
+        fallback_to_domcontentloaded: bool = False,
     ) -> pathlib.Path:
         data = self.screenshot_url(
             url, format=format, quality=quality, viewport=viewport,
             full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
+            fallback_to_domcontentloaded=fallback_to_domcontentloaded,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -270,12 +292,19 @@ class RenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'networkidle',
         delay_ms: int = 0,
+        fallback_to_domcontentloaded: bool = False,
     ) -> bytes:
         payload = self._build_pdf_payload(
             url=url, format=format, orientation=orientation, margin=margin,
             print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
         )
-        return self._post('/v1/pdf', payload).content
+        try:
+            return self._post('/v1/pdf', payload).content
+        except exceptions.APIError as exc:
+            if fallback_to_domcontentloaded and self._is_timeout_error(exc):
+                payload['wait_for'] = 'domcontentloaded'
+                return self._post('/v1/pdf', payload).content
+            raise
 
     def pdf_url_to_file(
         self,
@@ -288,10 +317,12 @@ class RenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'networkidle',
         delay_ms: int = 0,
+        fallback_to_domcontentloaded: bool = False,
     ) -> pathlib.Path:
         data = self.pdf_url(
             url, format=format, orientation=orientation, margin=margin,
             print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
+            fallback_to_domcontentloaded=fallback_to_domcontentloaded,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -356,6 +387,7 @@ class RenderShotClient(_BaseClient):
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
+        fallback_to_domcontentloaded: bool = False,
     ) -> list[pathlib.Path]:
         jobs = [
             {**self._build_screenshot_payload(
@@ -365,7 +397,9 @@ class RenderShotClient(_BaseClient):
             for url in urls
         ]
         ext = format.value
-        return self._bulk_render_and_save(jobs, output_dir, ext, 'screenshot', poll_interval, timeout, filenames)
+        return self._bulk_render_and_save(
+            jobs, output_dir, ext, 'screenshot', poll_interval, timeout, filenames, fallback_to_domcontentloaded
+        )
 
     def bulk_screenshot_htmls(
         self,
@@ -407,6 +441,7 @@ class RenderShotClient(_BaseClient):
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
+        fallback_to_domcontentloaded: bool = False,
     ) -> list[pathlib.Path]:
         jobs = [
             {**self._build_pdf_payload(
@@ -415,7 +450,9 @@ class RenderShotClient(_BaseClient):
             ), 'type': 'pdf'}
             for url in urls
         ]
-        return self._bulk_render_and_save(jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout, filenames)
+        return self._bulk_render_and_save(
+            jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout, filenames, fallback_to_domcontentloaded
+        )
 
     def bulk_pdf_htmls(
         self,
@@ -523,13 +560,14 @@ class AsyncRenderShotClient(_BaseClient):
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
+        fallback_to_domcontentloaded: bool = False,
     ) -> list[pathlib.Path]:
         out = pathlib.Path(output_dir)
         out.mkdir(parents=True, exist_ok=True)
 
         batches = [jobs_payload[i : i + _BULK_BATCH_SIZE] for i in range(0, len(jobs_payload), _BULK_BATCH_SIZE)]
 
-        job_ids: list[tuple[int, str]] = []
+        job_entries: list[tuple[int, str, dict[str, object]]] = []
         global_offset = 0
 
         for batch in batches:
@@ -538,15 +576,24 @@ class AsyncRenderShotClient(_BaseClient):
             for result in bulk.jobs:
                 original_index = global_offset + result.index
                 if result.job_id:
-                    job_ids.append((original_index, result.job_id))
+                    job_entries.append((original_index, result.job_id, jobs_payload[original_index]))
             global_offset += len(batch)
 
-        async def _fetch_one(original_index: int, job_id: str) -> tuple[int, bytes]:
-            await self._poll_job(job_id, poll_interval=poll_interval, timeout=timeout)
-            content = (await self._get(f'/v1/jobs/{job_id}/result')).content
+        async def _fetch_one(original_index: int, job_id: str, payload: dict[str, object]) -> tuple[int, bytes]:
+            try:
+                await self._poll_job(job_id, poll_interval=poll_interval, timeout=timeout)
+                content = (await self._get(f'/v1/jobs/{job_id}/result')).content
+            except exceptions.JobFailedError as exc:
+                if fallback_to_domcontentloaded and 'Timeout' in str(exc):
+                    retry = await self._post('/v1/bulk', {'jobs': [{**payload, 'wait_for': 'domcontentloaded'}]})
+                    retry_job_id = models.BulkRenderResponse.model_validate(retry.json()).jobs[0].job_id
+                    await self._poll_job(retry_job_id, poll_interval=poll_interval, timeout=timeout)
+                    content = (await self._get(f'/v1/jobs/{retry_job_id}/result')).content
+                else:
+                    raise
             return original_index, content
 
-        results = await asyncio.gather(*[_fetch_one(idx, jid) for idx, jid in job_ids])
+        results = await asyncio.gather(*[_fetch_one(idx, jid, payload) for idx, jid, payload in job_entries])
 
         output_paths: list[pathlib.Path | None] = [None] * len(jobs_payload)
         for original_index, file_bytes in results:
@@ -569,12 +616,19 @@ class AsyncRenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'networkidle',
         delay_ms: int = 0,
+        fallback_to_domcontentloaded: bool = False,
     ) -> bytes:
         payload = self._build_screenshot_payload(
             url=url, format=format, quality=quality, viewport=viewport,
             full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
         )
-        return (await self._post('/v1/screenshot', payload)).content
+        try:
+            return (await self._post('/v1/screenshot', payload)).content
+        except exceptions.APIError as exc:
+            if fallback_to_domcontentloaded and self._is_timeout_error(exc):
+                payload['wait_for'] = 'domcontentloaded'
+                return (await self._post('/v1/screenshot', payload)).content
+            raise
 
     async def screenshot_url_to_file(
         self,
@@ -588,10 +642,12 @@ class AsyncRenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'networkidle',
         delay_ms: int = 0,
+        fallback_to_domcontentloaded: bool = False,
     ) -> pathlib.Path:
         data = await self.screenshot_url(
             url, format=format, quality=quality, viewport=viewport,
             full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
+            fallback_to_domcontentloaded=fallback_to_domcontentloaded,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -646,12 +702,19 @@ class AsyncRenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'networkidle',
         delay_ms: int = 0,
+        fallback_to_domcontentloaded: bool = False,
     ) -> bytes:
         payload = self._build_pdf_payload(
             url=url, format=format, orientation=orientation, margin=margin,
             print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
         )
-        return (await self._post('/v1/pdf', payload)).content
+        try:
+            return (await self._post('/v1/pdf', payload)).content
+        except exceptions.APIError as exc:
+            if fallback_to_domcontentloaded and self._is_timeout_error(exc):
+                payload['wait_for'] = 'domcontentloaded'
+                return (await self._post('/v1/pdf', payload)).content
+            raise
 
     async def pdf_url_to_file(
         self,
@@ -664,10 +727,12 @@ class AsyncRenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'networkidle',
         delay_ms: int = 0,
+        fallback_to_domcontentloaded: bool = False,
     ) -> pathlib.Path:
         data = await self.pdf_url(
             url, format=format, orientation=orientation, margin=margin,
             print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
+            fallback_to_domcontentloaded=fallback_to_domcontentloaded,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -732,6 +797,7 @@ class AsyncRenderShotClient(_BaseClient):
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
+        fallback_to_domcontentloaded: bool = False,
     ) -> list[pathlib.Path]:
         jobs = [
             {**self._build_screenshot_payload(
@@ -741,7 +807,9 @@ class AsyncRenderShotClient(_BaseClient):
             for url in urls
         ]
         ext = format.value
-        return await self._bulk_render_and_save(jobs, output_dir, ext, 'screenshot', poll_interval, timeout, filenames)
+        return await self._bulk_render_and_save(
+            jobs, output_dir, ext, 'screenshot', poll_interval, timeout, filenames, fallback_to_domcontentloaded
+        )
 
     async def bulk_screenshot_htmls(
         self,
@@ -783,6 +851,7 @@ class AsyncRenderShotClient(_BaseClient):
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
+        fallback_to_domcontentloaded: bool = False,
     ) -> list[pathlib.Path]:
         jobs = [
             {**self._build_pdf_payload(
@@ -791,7 +860,9 @@ class AsyncRenderShotClient(_BaseClient):
             ), 'type': 'pdf'}
             for url in urls
         ]
-        return await self._bulk_render_and_save(jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout, filenames)
+        return await self._bulk_render_and_save(
+            jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout, filenames, fallback_to_domcontentloaded
+        )
 
     async def bulk_pdf_htmls(
         self,

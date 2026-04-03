@@ -73,6 +73,32 @@ paths = client.bulk_pdf_from_template(
 )
 ```
 
+## Handling networkidle timeouts
+
+Some URLs never reach `networkidle` (e.g. sites with persistent WebSocket connections or infinite polling). Use `fallback_to_domcontentloaded=True` to automatically retry with `wait_for='domcontentloaded'` when a timeout occurs:
+
+```python
+# Single URL — retries automatically on timeout
+png = client.screenshot_url(
+    'https://sport5.co.il',
+    fallback_to_domcontentloaded=True,
+)
+
+# Save to file
+client.screenshot_url_to_file(
+    'https://sport5.co.il',
+    'sport5.png',
+    fallback_to_domcontentloaded=True,
+)
+
+# Bulk — each timed-out job is individually retried
+paths = client.bulk_screenshot_urls(
+    urls=['https://sport5.co.il', 'https://example.com'],
+    output_dir='./screenshots',
+    fallback_to_domcontentloaded=True,
+)
+```
+
 ## Configuration
 
 | Parameter | Default | Description |
