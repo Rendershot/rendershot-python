@@ -194,7 +194,7 @@ class TestRenderShotClient:
             httpx.Response(200, content=_FAKE_PNG),
         ])
         client = rendershot.RenderShotClient(_API_KEY)
-        result = client.screenshot_url('https://example.com', fallback_to_domcontentloaded=True)
+        result = client.screenshot_url('https://example.com', timeout_fallback_to='domcontentloaded')
         assert result == _FAKE_PNG
         assert mock_api.calls[1].request.content.decode().__contains__('domcontentloaded')
 
@@ -203,7 +203,7 @@ class TestRenderShotClient:
         mock_api.post('/v1/screenshot').mock(return_value=httpx.Response(500, json={'detail': timeout_detail}))
         client = rendershot.RenderShotClient(_API_KEY)
         with pytest.raises(rendershot.exceptions.APIError):
-            client.screenshot_url('https://example.com', fallback_to_domcontentloaded=False)
+            client.screenshot_url('https://example.com', timeout_fallback_to=None)
 
 
 # --- async client ---
@@ -329,6 +329,6 @@ class TestAsyncRenderShotClient:
             httpx.Response(200, content=_FAKE_PNG),
         ])
         async with rendershot.AsyncRenderShotClient(_API_KEY) as client:
-            result = await client.screenshot_url('https://example.com', fallback_to_domcontentloaded=True)
+            result = await client.screenshot_url('https://example.com', timeout_fallback_to='domcontentloaded')
         assert result == _FAKE_PNG
         assert mock_api.calls[1].request.content.decode().__contains__('domcontentloaded')
