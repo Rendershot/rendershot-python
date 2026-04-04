@@ -184,7 +184,7 @@ class RenderShotClient(_BaseClient):
                     retry = self._post('/v1/bulk', {'jobs': [{**payload, 'wait_for': timeout_fallback_to}]})
                     retry_job_id = models.BulkRenderResponse.model_validate(retry.json()).jobs[0].job_id
                     if retry_job_id is None:
-                        raise exceptions.JobFailedError('unknown', 'Retry job has no job_id')
+                        raise exceptions.JobFailedError('unknown', 'Retry job has no job_id') from exc
                     self._poll_job(retry_job_id, poll_interval=poll_interval, timeout=timeout)
                     file_bytes = self._get(f'/v1/jobs/{retry_job_id}/result').content
                 else:
@@ -211,8 +211,14 @@ class RenderShotClient(_BaseClient):
         timeout_fallback_to: str | None = None,
     ) -> bytes:
         payload = self._build_screenshot_payload(
-            url=url, format=format, quality=quality, viewport=viewport,
-            full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
+            url=url,
+            format=format,
+            quality=quality,
+            viewport=viewport,
+            full_page=full_page,
+            clip=clip,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
         )
         try:
             return self._post('/v1/screenshot', payload).content
@@ -237,8 +243,14 @@ class RenderShotClient(_BaseClient):
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
         data = self.screenshot_url(
-            url, format=format, quality=quality, viewport=viewport,
-            full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
+            url,
+            format=format,
+            quality=quality,
+            viewport=viewport,
+            full_page=full_page,
+            clip=clip,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
             timeout_fallback_to=timeout_fallback_to,
         )
         dest = pathlib.Path(output_path)
@@ -258,8 +270,14 @@ class RenderShotClient(_BaseClient):
         delay_ms: int = 0,
     ) -> bytes:
         payload = self._build_screenshot_payload(
-            html=html, format=format, quality=quality, viewport=viewport,
-            full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
+            html=html,
+            format=format,
+            quality=quality,
+            viewport=viewport,
+            full_page=full_page,
+            clip=clip,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
         )
         return self._post('/v1/screenshot', payload).content
 
@@ -277,8 +295,14 @@ class RenderShotClient(_BaseClient):
         delay_ms: int = 0,
     ) -> pathlib.Path:
         data = self.screenshot_html(
-            html, format=format, quality=quality, viewport=viewport,
-            full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
+            html,
+            format=format,
+            quality=quality,
+            viewport=viewport,
+            full_page=full_page,
+            clip=clip,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -297,8 +321,13 @@ class RenderShotClient(_BaseClient):
         timeout_fallback_to: str | None = None,
     ) -> bytes:
         payload = self._build_pdf_payload(
-            url=url, format=format, orientation=orientation, margin=margin,
-            print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
+            url=url,
+            format=format,
+            orientation=orientation,
+            margin=margin,
+            print_background=print_background,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
         )
         try:
             return self._post('/v1/pdf', payload).content
@@ -322,8 +351,13 @@ class RenderShotClient(_BaseClient):
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
         data = self.pdf_url(
-            url, format=format, orientation=orientation, margin=margin,
-            print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
+            url,
+            format=format,
+            orientation=orientation,
+            margin=margin,
+            print_background=print_background,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
             timeout_fallback_to=timeout_fallback_to,
         )
         dest = pathlib.Path(output_path)
@@ -342,8 +376,13 @@ class RenderShotClient(_BaseClient):
         delay_ms: int = 0,
     ) -> bytes:
         payload = self._build_pdf_payload(
-            html=html, format=format, orientation=orientation, margin=margin,
-            print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
+            html=html,
+            format=format,
+            orientation=orientation,
+            margin=margin,
+            print_background=print_background,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
         )
         return self._post('/v1/pdf', payload).content
 
@@ -360,8 +399,13 @@ class RenderShotClient(_BaseClient):
         delay_ms: int = 0,
     ) -> pathlib.Path:
         data = self.pdf_html(
-            html, format=format, orientation=orientation, margin=margin,
-            print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
+            html,
+            format=format,
+            orientation=orientation,
+            margin=margin,
+            print_background=print_background,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -392,10 +436,19 @@ class RenderShotClient(_BaseClient):
         timeout_fallback_to: str | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
-            {**self._build_screenshot_payload(
-                url=url, format=format, quality=quality, viewport=viewport,
-                full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
-            ), 'type': 'screenshot'}
+            {
+                **self._build_screenshot_payload(
+                    url=url,
+                    format=format,
+                    quality=quality,
+                    viewport=viewport,
+                    full_page=full_page,
+                    clip=clip,
+                    wait_for=wait_for,
+                    delay_ms=delay_ms,
+                ),
+                'type': 'screenshot',
+            }
             for url in urls
         ]
         ext = format.value
@@ -420,10 +473,19 @@ class RenderShotClient(_BaseClient):
         filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
-            {**self._build_screenshot_payload(
-                html=html, format=format, quality=quality, viewport=viewport,
-                full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
-            ), 'type': 'screenshot'}
+            {
+                **self._build_screenshot_payload(
+                    html=html,
+                    format=format,
+                    quality=quality,
+                    viewport=viewport,
+                    full_page=full_page,
+                    clip=clip,
+                    wait_for=wait_for,
+                    delay_ms=delay_ms,
+                ),
+                'type': 'screenshot',
+            }
             for html in htmls
         ]
         ext = format.value
@@ -446,10 +508,18 @@ class RenderShotClient(_BaseClient):
         timeout_fallback_to: str | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
-            {**self._build_pdf_payload(
-                url=url, format=format, orientation=orientation, margin=margin,
-                print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
-            ), 'type': 'pdf'}
+            {
+                **self._build_pdf_payload(
+                    url=url,
+                    format=format,
+                    orientation=orientation,
+                    margin=margin,
+                    print_background=print_background,
+                    wait_for=wait_for,
+                    delay_ms=delay_ms,
+                ),
+                'type': 'pdf',
+            }
             for url in urls
         ]
         return self._bulk_render_and_save(
@@ -472,10 +542,18 @@ class RenderShotClient(_BaseClient):
         filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
-            {**self._build_pdf_payload(
-                html=html, format=format, orientation=orientation, margin=margin,
-                print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
-            ), 'type': 'pdf'}
+            {
+                **self._build_pdf_payload(
+                    html=html,
+                    format=format,
+                    orientation=orientation,
+                    margin=margin,
+                    print_background=print_background,
+                    wait_for=wait_for,
+                    delay_ms=delay_ms,
+                ),
+                'type': 'pdf',
+            }
             for html in htmls
         ]
         return self._bulk_render_and_save(jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout, filenames)
@@ -500,10 +578,17 @@ class RenderShotClient(_BaseClient):
         tmpl = env.from_string(template_str)
         htmls = [tmpl.render(**ctx) for ctx in contexts]
         return self.bulk_pdf_htmls(
-            htmls, output_dir,
-            format=format, orientation=orientation, margin=margin,
-            print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
-            poll_interval=poll_interval, timeout=timeout, filenames=filenames,
+            htmls,
+            output_dir,
+            format=format,
+            orientation=orientation,
+            margin=margin,
+            print_background=print_background,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
+            poll_interval=poll_interval,
+            timeout=timeout,
+            filenames=filenames,
         )
 
 
@@ -590,7 +675,7 @@ class AsyncRenderShotClient(_BaseClient):
                     retry = await self._post('/v1/bulk', {'jobs': [{**payload, 'wait_for': timeout_fallback_to}]})
                     retry_job_id = models.BulkRenderResponse.model_validate(retry.json()).jobs[0].job_id
                     if retry_job_id is None:
-                        raise exceptions.JobFailedError('unknown', 'Retry job has no job_id')
+                        raise exceptions.JobFailedError('unknown', 'Retry job has no job_id') from exc
                     await self._poll_job(retry_job_id, poll_interval=poll_interval, timeout=timeout)
                     content = (await self._get(f'/v1/jobs/{retry_job_id}/result')).content
                 else:
@@ -623,8 +708,14 @@ class AsyncRenderShotClient(_BaseClient):
         timeout_fallback_to: str | None = None,
     ) -> bytes:
         payload = self._build_screenshot_payload(
-            url=url, format=format, quality=quality, viewport=viewport,
-            full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
+            url=url,
+            format=format,
+            quality=quality,
+            viewport=viewport,
+            full_page=full_page,
+            clip=clip,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
         )
         try:
             return (await self._post('/v1/screenshot', payload)).content
@@ -649,8 +740,14 @@ class AsyncRenderShotClient(_BaseClient):
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
         data = await self.screenshot_url(
-            url, format=format, quality=quality, viewport=viewport,
-            full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
+            url,
+            format=format,
+            quality=quality,
+            viewport=viewport,
+            full_page=full_page,
+            clip=clip,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
             timeout_fallback_to=timeout_fallback_to,
         )
         dest = pathlib.Path(output_path)
@@ -670,8 +767,14 @@ class AsyncRenderShotClient(_BaseClient):
         delay_ms: int = 0,
     ) -> bytes:
         payload = self._build_screenshot_payload(
-            html=html, format=format, quality=quality, viewport=viewport,
-            full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
+            html=html,
+            format=format,
+            quality=quality,
+            viewport=viewport,
+            full_page=full_page,
+            clip=clip,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
         )
         return (await self._post('/v1/screenshot', payload)).content
 
@@ -689,8 +792,14 @@ class AsyncRenderShotClient(_BaseClient):
         delay_ms: int = 0,
     ) -> pathlib.Path:
         data = await self.screenshot_html(
-            html, format=format, quality=quality, viewport=viewport,
-            full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
+            html,
+            format=format,
+            quality=quality,
+            viewport=viewport,
+            full_page=full_page,
+            clip=clip,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -709,8 +818,13 @@ class AsyncRenderShotClient(_BaseClient):
         timeout_fallback_to: str | None = None,
     ) -> bytes:
         payload = self._build_pdf_payload(
-            url=url, format=format, orientation=orientation, margin=margin,
-            print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
+            url=url,
+            format=format,
+            orientation=orientation,
+            margin=margin,
+            print_background=print_background,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
         )
         try:
             return (await self._post('/v1/pdf', payload)).content
@@ -734,8 +848,13 @@ class AsyncRenderShotClient(_BaseClient):
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
         data = await self.pdf_url(
-            url, format=format, orientation=orientation, margin=margin,
-            print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
+            url,
+            format=format,
+            orientation=orientation,
+            margin=margin,
+            print_background=print_background,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
             timeout_fallback_to=timeout_fallback_to,
         )
         dest = pathlib.Path(output_path)
@@ -754,8 +873,13 @@ class AsyncRenderShotClient(_BaseClient):
         delay_ms: int = 0,
     ) -> bytes:
         payload = self._build_pdf_payload(
-            html=html, format=format, orientation=orientation, margin=margin,
-            print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
+            html=html,
+            format=format,
+            orientation=orientation,
+            margin=margin,
+            print_background=print_background,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
         )
         return (await self._post('/v1/pdf', payload)).content
 
@@ -772,8 +896,13 @@ class AsyncRenderShotClient(_BaseClient):
         delay_ms: int = 0,
     ) -> pathlib.Path:
         data = await self.pdf_html(
-            html, format=format, orientation=orientation, margin=margin,
-            print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
+            html,
+            format=format,
+            orientation=orientation,
+            margin=margin,
+            print_background=print_background,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -804,10 +933,19 @@ class AsyncRenderShotClient(_BaseClient):
         timeout_fallback_to: str | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
-            {**self._build_screenshot_payload(
-                url=url, format=format, quality=quality, viewport=viewport,
-                full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
-            ), 'type': 'screenshot'}
+            {
+                **self._build_screenshot_payload(
+                    url=url,
+                    format=format,
+                    quality=quality,
+                    viewport=viewport,
+                    full_page=full_page,
+                    clip=clip,
+                    wait_for=wait_for,
+                    delay_ms=delay_ms,
+                ),
+                'type': 'screenshot',
+            }
             for url in urls
         ]
         ext = format.value
@@ -832,10 +970,19 @@ class AsyncRenderShotClient(_BaseClient):
         filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
-            {**self._build_screenshot_payload(
-                html=html, format=format, quality=quality, viewport=viewport,
-                full_page=full_page, clip=clip, wait_for=wait_for, delay_ms=delay_ms,
-            ), 'type': 'screenshot'}
+            {
+                **self._build_screenshot_payload(
+                    html=html,
+                    format=format,
+                    quality=quality,
+                    viewport=viewport,
+                    full_page=full_page,
+                    clip=clip,
+                    wait_for=wait_for,
+                    delay_ms=delay_ms,
+                ),
+                'type': 'screenshot',
+            }
             for html in htmls
         ]
         ext = format.value
@@ -858,10 +1005,18 @@ class AsyncRenderShotClient(_BaseClient):
         timeout_fallback_to: str | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
-            {**self._build_pdf_payload(
-                url=url, format=format, orientation=orientation, margin=margin,
-                print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
-            ), 'type': 'pdf'}
+            {
+                **self._build_pdf_payload(
+                    url=url,
+                    format=format,
+                    orientation=orientation,
+                    margin=margin,
+                    print_background=print_background,
+                    wait_for=wait_for,
+                    delay_ms=delay_ms,
+                ),
+                'type': 'pdf',
+            }
             for url in urls
         ]
         return await self._bulk_render_and_save(
@@ -884,10 +1039,18 @@ class AsyncRenderShotClient(_BaseClient):
         filenames: list[str] | None = None,
     ) -> list[pathlib.Path]:
         jobs = [
-            {**self._build_pdf_payload(
-                html=html, format=format, orientation=orientation, margin=margin,
-                print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
-            ), 'type': 'pdf'}
+            {
+                **self._build_pdf_payload(
+                    html=html,
+                    format=format,
+                    orientation=orientation,
+                    margin=margin,
+                    print_background=print_background,
+                    wait_for=wait_for,
+                    delay_ms=delay_ms,
+                ),
+                'type': 'pdf',
+            }
             for html in htmls
         ]
         return await self._bulk_render_and_save(jobs, output_dir, 'pdf', 'pdf', poll_interval, timeout, filenames)
@@ -912,8 +1075,15 @@ class AsyncRenderShotClient(_BaseClient):
         tmpl = env.from_string(template_str)
         htmls = [tmpl.render(**ctx) for ctx in contexts]
         return await self.bulk_pdf_htmls(
-            htmls, output_dir,
-            format=format, orientation=orientation, margin=margin,
-            print_background=print_background, wait_for=wait_for, delay_ms=delay_ms,
-            poll_interval=poll_interval, timeout=timeout, filenames=filenames,
+            htmls,
+            output_dir,
+            format=format,
+            orientation=orientation,
+            margin=margin,
+            print_background=print_background,
+            wait_for=wait_for,
+            delay_ms=delay_ms,
+            poll_interval=poll_interval,
+            timeout=timeout,
+            filenames=filenames,
         )
