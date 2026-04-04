@@ -183,6 +183,8 @@ class RenderShotClient(_BaseClient):
                 if timeout_fallback_to is not None and 'Timeout' in str(exc):
                     retry = self._post('/v1/bulk', {'jobs': [{**payload, 'wait_for': timeout_fallback_to}]})
                     retry_job_id = models.BulkRenderResponse.model_validate(retry.json()).jobs[0].job_id
+                    if retry_job_id is None:
+                        raise exceptions.JobFailedError('unknown', 'Retry job has no job_id')
                     self._poll_job(retry_job_id, poll_interval=poll_interval, timeout=timeout)
                     file_bytes = self._get(f'/v1/jobs/{retry_job_id}/result').content
                 else:
@@ -587,6 +589,8 @@ class AsyncRenderShotClient(_BaseClient):
                 if timeout_fallback_to is not None and 'Timeout' in str(exc):
                     retry = await self._post('/v1/bulk', {'jobs': [{**payload, 'wait_for': timeout_fallback_to}]})
                     retry_job_id = models.BulkRenderResponse.model_validate(retry.json()).jobs[0].job_id
+                    if retry_job_id is None:
+                        raise exceptions.JobFailedError('unknown', 'Retry job has no job_id')
                     await self._poll_job(retry_job_id, poll_interval=poll_interval, timeout=timeout)
                     content = (await self._get(f'/v1/jobs/{retry_job_id}/result')).content
                 else:
