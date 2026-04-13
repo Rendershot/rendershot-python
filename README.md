@@ -1,5 +1,9 @@
 # rendershot-python
 
+[![CI](https://github.com/Rendershot/rendershot-python/actions/workflows/ci.yml/badge.svg)](https://github.com/Rendershot/rendershot-python/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/rendershot)](https://pypi.org/project/rendershot/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Python SDK for the [Rendershot](https://rendershot.io) screenshot & PDF generation API.
 
 ## Installation
