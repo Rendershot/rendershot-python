@@ -23,6 +23,11 @@ class PDFOrientation(enum.StrEnum):
     landscape = 'landscape'
 
 
+class AICleanupMode(enum.StrEnum):
+    fast = 'fast'
+    thorough = 'thorough'
+
+
 class ViewportParams(pydantic.BaseModel):
     width: int = pydantic.Field(default=1280, ge=1, le=3840)
     height: int = pydantic.Field(default=720, ge=1, le=2160)

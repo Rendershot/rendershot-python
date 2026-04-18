@@ -77,6 +77,27 @@ paths = client.bulk_pdf_from_template(
 )
 ```
 
+## AI cleanup (remove cookie banners & popups)
+
+Pass `ai_cleanup` to have the backend strip common cookie banners, consent overlays, and popup modals before the render. Two modes:
+
+- `AICleanupMode.fast` — JS heuristics (1 credit, same as a plain render).
+- `AICleanupMode.thorough` — adds a Claude LLM pass that snapshots the DOM and identifies remaining overlays (3 credits; backend must have an Anthropic key configured).
+
+```python
+png = client.screenshot_url(
+    'https://example.com',
+    ai_cleanup=rendershot.models.AICleanupMode.fast,
+)
+
+pdf = client.pdf_url(
+    'https://example.com',
+    ai_cleanup=rendershot.models.AICleanupMode.thorough,
+)
+```
+
+Works on all single and bulk methods on both the sync and async clients.
+
 ## Handling network_idle timeouts
 
 Some URLs never reach `network_idle` (e.g. sites with persistent WebSocket connections or infinite polling). Use `timeout_fallback_to='dom_content_loaded'` to automatically retry with `wait_for='dom_content_loaded'` when a timeout occurs:

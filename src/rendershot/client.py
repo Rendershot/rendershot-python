@@ -53,6 +53,7 @@ class _BaseClient:
         clip: models.ClipParams | None = None,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
     ) -> dict[str, object]:
         payload: dict[str, object] = {
             'format': format.value,
@@ -68,6 +69,8 @@ class _BaseClient:
             payload['html'] = html
         if clip is not None:
             payload['clip'] = clip.model_dump()
+        if ai_cleanup is not None:
+            payload['ai_cleanup'] = ai_cleanup.value
         return payload
 
     def _build_pdf_payload(
@@ -81,6 +84,7 @@ class _BaseClient:
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
     ) -> dict[str, object]:
         payload: dict[str, object] = {
             'format': format.value,
@@ -94,6 +98,8 @@ class _BaseClient:
             payload['url'] = url
         if html is not None:
             payload['html'] = html
+        if ai_cleanup is not None:
+            payload['ai_cleanup'] = ai_cleanup.value
         return payload
 
 
@@ -208,6 +214,7 @@ class RenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         timeout_fallback_to: str | None = None,
     ) -> bytes:
         payload = self._build_screenshot_payload(
@@ -219,6 +226,7 @@ class RenderShotClient(_BaseClient):
             clip=clip,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
         )
         try:
             return self._post('/v1/screenshot', payload).content
@@ -240,6 +248,7 @@ class RenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
         data = self.screenshot_url(
@@ -251,6 +260,7 @@ class RenderShotClient(_BaseClient):
             clip=clip,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
             timeout_fallback_to=timeout_fallback_to,
         )
         dest = pathlib.Path(output_path)
@@ -268,6 +278,7 @@ class RenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
     ) -> bytes:
         payload = self._build_screenshot_payload(
             html=html,
@@ -278,6 +289,7 @@ class RenderShotClient(_BaseClient):
             clip=clip,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
         )
         return self._post('/v1/screenshot', payload).content
 
@@ -293,6 +305,7 @@ class RenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
     ) -> pathlib.Path:
         data = self.screenshot_html(
             html,
@@ -303,6 +316,7 @@ class RenderShotClient(_BaseClient):
             clip=clip,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -318,6 +332,7 @@ class RenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         timeout_fallback_to: str | None = None,
     ) -> bytes:
         payload = self._build_pdf_payload(
@@ -328,6 +343,7 @@ class RenderShotClient(_BaseClient):
             print_background=print_background,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
         )
         try:
             return self._post('/v1/pdf', payload).content
@@ -348,6 +364,7 @@ class RenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
         data = self.pdf_url(
@@ -358,6 +375,7 @@ class RenderShotClient(_BaseClient):
             print_background=print_background,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
             timeout_fallback_to=timeout_fallback_to,
         )
         dest = pathlib.Path(output_path)
@@ -374,6 +392,7 @@ class RenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
     ) -> bytes:
         payload = self._build_pdf_payload(
             html=html,
@@ -383,6 +402,7 @@ class RenderShotClient(_BaseClient):
             print_background=print_background,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
         )
         return self._post('/v1/pdf', payload).content
 
@@ -397,6 +417,7 @@ class RenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
     ) -> pathlib.Path:
         data = self.pdf_html(
             html,
@@ -406,6 +427,7 @@ class RenderShotClient(_BaseClient):
             print_background=print_background,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -430,6 +452,7 @@ class RenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -446,6 +469,7 @@ class RenderShotClient(_BaseClient):
                     clip=clip,
                     wait_for=wait_for,
                     delay_ms=delay_ms,
+                    ai_cleanup=ai_cleanup,
                 ),
                 'type': 'screenshot',
             }
@@ -468,6 +492,7 @@ class RenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -483,6 +508,7 @@ class RenderShotClient(_BaseClient):
                     clip=clip,
                     wait_for=wait_for,
                     delay_ms=delay_ms,
+                    ai_cleanup=ai_cleanup,
                 ),
                 'type': 'screenshot',
             }
@@ -502,6 +528,7 @@ class RenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -517,6 +544,7 @@ class RenderShotClient(_BaseClient):
                     print_background=print_background,
                     wait_for=wait_for,
                     delay_ms=delay_ms,
+                    ai_cleanup=ai_cleanup,
                 ),
                 'type': 'pdf',
             }
@@ -537,6 +565,7 @@ class RenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -551,6 +580,7 @@ class RenderShotClient(_BaseClient):
                     print_background=print_background,
                     wait_for=wait_for,
                     delay_ms=delay_ms,
+                    ai_cleanup=ai_cleanup,
                 ),
                 'type': 'pdf',
             }
@@ -570,6 +600,7 @@ class RenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -586,6 +617,7 @@ class RenderShotClient(_BaseClient):
             print_background=print_background,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
             poll_interval=poll_interval,
             timeout=timeout,
             filenames=filenames,
@@ -705,6 +737,7 @@ class AsyncRenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         timeout_fallback_to: str | None = None,
     ) -> bytes:
         payload = self._build_screenshot_payload(
@@ -716,6 +749,7 @@ class AsyncRenderShotClient(_BaseClient):
             clip=clip,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
         )
         try:
             return (await self._post('/v1/screenshot', payload)).content
@@ -737,6 +771,7 @@ class AsyncRenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
         data = await self.screenshot_url(
@@ -748,6 +783,7 @@ class AsyncRenderShotClient(_BaseClient):
             clip=clip,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
             timeout_fallback_to=timeout_fallback_to,
         )
         dest = pathlib.Path(output_path)
@@ -765,6 +801,7 @@ class AsyncRenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
     ) -> bytes:
         payload = self._build_screenshot_payload(
             html=html,
@@ -775,6 +812,7 @@ class AsyncRenderShotClient(_BaseClient):
             clip=clip,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
         )
         return (await self._post('/v1/screenshot', payload)).content
 
@@ -790,6 +828,7 @@ class AsyncRenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
     ) -> pathlib.Path:
         data = await self.screenshot_html(
             html,
@@ -800,6 +839,7 @@ class AsyncRenderShotClient(_BaseClient):
             clip=clip,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -815,6 +855,7 @@ class AsyncRenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         timeout_fallback_to: str | None = None,
     ) -> bytes:
         payload = self._build_pdf_payload(
@@ -825,6 +866,7 @@ class AsyncRenderShotClient(_BaseClient):
             print_background=print_background,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
         )
         try:
             return (await self._post('/v1/pdf', payload)).content
@@ -845,6 +887,7 @@ class AsyncRenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
         data = await self.pdf_url(
@@ -855,6 +898,7 @@ class AsyncRenderShotClient(_BaseClient):
             print_background=print_background,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
             timeout_fallback_to=timeout_fallback_to,
         )
         dest = pathlib.Path(output_path)
@@ -871,6 +915,7 @@ class AsyncRenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
     ) -> bytes:
         payload = self._build_pdf_payload(
             html=html,
@@ -880,6 +925,7 @@ class AsyncRenderShotClient(_BaseClient):
             print_background=print_background,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
         )
         return (await self._post('/v1/pdf', payload)).content
 
@@ -894,6 +940,7 @@ class AsyncRenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
     ) -> pathlib.Path:
         data = await self.pdf_html(
             html,
@@ -903,6 +950,7 @@ class AsyncRenderShotClient(_BaseClient):
             print_background=print_background,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -927,6 +975,7 @@ class AsyncRenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -943,6 +992,7 @@ class AsyncRenderShotClient(_BaseClient):
                     clip=clip,
                     wait_for=wait_for,
                     delay_ms=delay_ms,
+                    ai_cleanup=ai_cleanup,
                 ),
                 'type': 'screenshot',
             }
@@ -965,6 +1015,7 @@ class AsyncRenderShotClient(_BaseClient):
         clip: models.ClipParams | None = None,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -980,6 +1031,7 @@ class AsyncRenderShotClient(_BaseClient):
                     clip=clip,
                     wait_for=wait_for,
                     delay_ms=delay_ms,
+                    ai_cleanup=ai_cleanup,
                 ),
                 'type': 'screenshot',
             }
@@ -999,6 +1051,7 @@ class AsyncRenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -1014,6 +1067,7 @@ class AsyncRenderShotClient(_BaseClient):
                     print_background=print_background,
                     wait_for=wait_for,
                     delay_ms=delay_ms,
+                    ai_cleanup=ai_cleanup,
                 ),
                 'type': 'pdf',
             }
@@ -1034,6 +1088,7 @@ class AsyncRenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -1048,6 +1103,7 @@ class AsyncRenderShotClient(_BaseClient):
                     print_background=print_background,
                     wait_for=wait_for,
                     delay_ms=delay_ms,
+                    ai_cleanup=ai_cleanup,
                 ),
                 'type': 'pdf',
             }
@@ -1067,6 +1123,7 @@ class AsyncRenderShotClient(_BaseClient):
         print_background: bool = True,
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
+        ai_cleanup: models.AICleanupMode | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -1083,6 +1140,7 @@ class AsyncRenderShotClient(_BaseClient):
             print_background=print_background,
             wait_for=wait_for,
             delay_ms=delay_ms,
+            ai_cleanup=ai_cleanup,
             poll_interval=poll_interval,
             timeout=timeout,
             filenames=filenames,

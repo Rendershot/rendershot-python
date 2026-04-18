@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import json
 import pathlib
 
 import httpx
@@ -204,6 +205,27 @@ class TestRenderShotClient:
         client = rendershot.RenderShotClient(_API_KEY)
         with pytest.raises(rendershot.exceptions.APIError):
             client.screenshot_url('https://example.com', timeout_fallback_to=None)
+
+    def test_ai_cleanup_sent_when_provided(self, mock_api: respx.MockRouter) -> None:
+        mock_api.post('/v1/screenshot').mock(return_value=httpx.Response(200, content=_FAKE_PNG))
+        client = rendershot.RenderShotClient(_API_KEY)
+        client.screenshot_url('https://example.com', ai_cleanup=rendershot.models.AICleanupMode.fast)
+        body = json.loads(mock_api.calls.last.request.content)
+        assert body['ai_cleanup'] == 'fast'
+
+    def test_ai_cleanup_omitted_when_not_provided(self, mock_api: respx.MockRouter) -> None:
+        mock_api.post('/v1/screenshot').mock(return_value=httpx.Response(200, content=_FAKE_PNG))
+        client = rendershot.RenderShotClient(_API_KEY)
+        client.screenshot_url('https://example.com')
+        body = json.loads(mock_api.calls.last.request.content)
+        assert 'ai_cleanup' not in body
+
+    def test_ai_cleanup_sent_on_pdf(self, mock_api: respx.MockRouter) -> None:
+        mock_api.post('/v1/pdf').mock(return_value=httpx.Response(200, content=_FAKE_PDF))
+        client = rendershot.RenderShotClient(_API_KEY)
+        client.pdf_url('https://example.com', ai_cleanup=rendershot.models.AICleanupMode.thorough)
+        body = json.loads(mock_api.calls.last.request.content)
+        assert body['ai_cleanup'] == 'thorough'
 
 
 # --- async client ---
