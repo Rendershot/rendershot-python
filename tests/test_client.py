@@ -187,16 +187,16 @@ class TestRenderShotClient:
         request = mock_api.calls.last.request
         assert request.headers['x-api-key'] == _API_KEY
 
-    def test_fallback_to_domcontentloaded(self, mock_api: respx.MockRouter) -> None:
+    def test_fallback_to_dom_content_loaded(self, mock_api: respx.MockRouter) -> None:
         timeout_detail = {'code': 'RENDER_ERROR', 'message': 'Page.goto: Timeout 30000ms exceeded'}
         mock_api.post('/v1/screenshot').mock(side_effect=[
             httpx.Response(500, json={'detail': timeout_detail}),
             httpx.Response(200, content=_FAKE_PNG),
         ])
         client = rendershot.RenderShotClient(_API_KEY)
-        result = client.screenshot_url('https://example.com', timeout_fallback_to='domcontentloaded')
+        result = client.screenshot_url('https://example.com', timeout_fallback_to='dom_content_loaded')
         assert result == _FAKE_PNG
-        assert mock_api.calls[1].request.content.decode().__contains__('domcontentloaded')
+        assert mock_api.calls[1].request.content.decode().__contains__('dom_content_loaded')
 
     def test_fallback_disabled_raises(self, mock_api: respx.MockRouter) -> None:
         timeout_detail = {'code': 'RENDER_ERROR', 'message': 'Page.goto: Timeout 30000ms exceeded'}
@@ -322,13 +322,13 @@ class TestAsyncRenderShotClient:
             with pytest.raises(rendershot.exceptions.JobFailedError):
                 await client.bulk_screenshot_urls(['https://example.com'], tmp_path)
 
-    async def test_fallback_to_domcontentloaded(self, mock_api: respx.MockRouter) -> None:
+    async def test_fallback_to_dom_content_loaded(self, mock_api: respx.MockRouter) -> None:
         timeout_detail = {'code': 'RENDER_ERROR', 'message': 'Page.goto: Timeout 30000ms exceeded'}
         mock_api.post('/v1/screenshot').mock(side_effect=[
             httpx.Response(500, json={'detail': timeout_detail}),
             httpx.Response(200, content=_FAKE_PNG),
         ])
         async with rendershot.AsyncRenderShotClient(_API_KEY) as client:
-            result = await client.screenshot_url('https://example.com', timeout_fallback_to='domcontentloaded')
+            result = await client.screenshot_url('https://example.com', timeout_fallback_to='dom_content_loaded')
         assert result == _FAKE_PNG
-        assert mock_api.calls[1].request.content.decode().__contains__('domcontentloaded')
+        assert mock_api.calls[1].request.content.decode().__contains__('dom_content_loaded')

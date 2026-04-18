@@ -51,7 +51,7 @@ class _BaseClient:
         viewport: models.ViewportParams | None = None,
         full_page: bool = False,
         clip: models.ClipParams | None = None,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
     ) -> dict[str, object]:
         payload: dict[str, object] = {
@@ -79,7 +79,7 @@ class _BaseClient:
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
     ) -> dict[str, object]:
         payload: dict[str, object] = {
@@ -206,7 +206,7 @@ class RenderShotClient(_BaseClient):
         viewport: models.ViewportParams | None = None,
         full_page: bool = False,
         clip: models.ClipParams | None = None,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         timeout_fallback_to: str | None = None,
     ) -> bytes:
@@ -238,7 +238,7 @@ class RenderShotClient(_BaseClient):
         viewport: models.ViewportParams | None = None,
         full_page: bool = False,
         clip: models.ClipParams | None = None,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
@@ -266,7 +266,7 @@ class RenderShotClient(_BaseClient):
         viewport: models.ViewportParams | None = None,
         full_page: bool = False,
         clip: models.ClipParams | None = None,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
     ) -> bytes:
         payload = self._build_screenshot_payload(
@@ -291,7 +291,7 @@ class RenderShotClient(_BaseClient):
         viewport: models.ViewportParams | None = None,
         full_page: bool = False,
         clip: models.ClipParams | None = None,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
     ) -> pathlib.Path:
         data = self.screenshot_html(
@@ -316,7 +316,7 @@ class RenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         timeout_fallback_to: str | None = None,
     ) -> bytes:
@@ -346,7 +346,7 @@ class RenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
@@ -372,7 +372,7 @@ class RenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
     ) -> bytes:
         payload = self._build_pdf_payload(
@@ -395,7 +395,7 @@ class RenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
     ) -> pathlib.Path:
         data = self.pdf_html(
@@ -428,7 +428,7 @@ class RenderShotClient(_BaseClient):
         viewport: models.ViewportParams | None = None,
         full_page: bool = False,
         clip: models.ClipParams | None = None,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
@@ -466,7 +466,7 @@ class RenderShotClient(_BaseClient):
         viewport: models.ViewportParams | None = None,
         full_page: bool = False,
         clip: models.ClipParams | None = None,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
@@ -500,7 +500,7 @@ class RenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
@@ -535,7 +535,7 @@ class RenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
@@ -568,7 +568,7 @@ class RenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
@@ -703,7 +703,7 @@ class AsyncRenderShotClient(_BaseClient):
         viewport: models.ViewportParams | None = None,
         full_page: bool = False,
         clip: models.ClipParams | None = None,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         timeout_fallback_to: str | None = None,
     ) -> bytes:
@@ -735,7 +735,7 @@ class AsyncRenderShotClient(_BaseClient):
         viewport: models.ViewportParams | None = None,
         full_page: bool = False,
         clip: models.ClipParams | None = None,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
@@ -763,7 +763,7 @@ class AsyncRenderShotClient(_BaseClient):
         viewport: models.ViewportParams | None = None,
         full_page: bool = False,
         clip: models.ClipParams | None = None,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
     ) -> bytes:
         payload = self._build_screenshot_payload(
@@ -788,7 +788,7 @@ class AsyncRenderShotClient(_BaseClient):
         viewport: models.ViewportParams | None = None,
         full_page: bool = False,
         clip: models.ClipParams | None = None,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
     ) -> pathlib.Path:
         data = await self.screenshot_html(
@@ -813,7 +813,7 @@ class AsyncRenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         timeout_fallback_to: str | None = None,
     ) -> bytes:
@@ -843,7 +843,7 @@ class AsyncRenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
@@ -869,7 +869,7 @@ class AsyncRenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
     ) -> bytes:
         payload = self._build_pdf_payload(
@@ -892,7 +892,7 @@ class AsyncRenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
     ) -> pathlib.Path:
         data = await self.pdf_html(
@@ -925,7 +925,7 @@ class AsyncRenderShotClient(_BaseClient):
         viewport: models.ViewportParams | None = None,
         full_page: bool = False,
         clip: models.ClipParams | None = None,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
@@ -963,7 +963,7 @@ class AsyncRenderShotClient(_BaseClient):
         viewport: models.ViewportParams | None = None,
         full_page: bool = False,
         clip: models.ClipParams | None = None,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
@@ -997,7 +997,7 @@ class AsyncRenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
@@ -1032,7 +1032,7 @@ class AsyncRenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
@@ -1065,7 +1065,7 @@ class AsyncRenderShotClient(_BaseClient):
         orientation: models.PDFOrientation = models.PDFOrientation.portrait,
         margin: models.MarginParams | None = None,
         print_background: bool = True,
-        wait_for: str = 'networkidle',
+        wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
