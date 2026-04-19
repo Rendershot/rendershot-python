@@ -14,6 +14,26 @@ _DEFAULT_BASE_URL = 'https://api.rendershot.io'
 _BULK_BATCH_SIZE = 20
 
 
+def _apply_auth_fields(
+    payload: dict[str, object],
+    *,
+    headers: dict[str, str] | None,
+    cookies: list[models.Cookie] | None,
+    basic_auth: models.BasicAuth | None,
+) -> None:
+    """Serialise optional authenticated-render fields into ``payload``.
+
+    Extracted so both screenshot and PDF payload builders share the exact same
+    wire format and we only have one place to evolve the shape.
+    """
+    if headers:
+        payload['headers'] = headers
+    if cookies:
+        payload['cookies'] = [c.to_api_payload() for c in cookies]
+    if basic_auth is not None:
+        payload['basic_auth'] = basic_auth.model_dump()
+
+
 class _BaseClient:
     def __init__(self, api_key: str, base_url: str = _DEFAULT_BASE_URL) -> None:
         self._api_key = api_key
@@ -54,6 +74,9 @@ class _BaseClient:
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
     ) -> dict[str, object]:
         payload: dict[str, object] = {
             'format': format.value,
@@ -71,6 +94,7 @@ class _BaseClient:
             payload['clip'] = clip.model_dump()
         if ai_cleanup is not None:
             payload['ai_cleanup'] = ai_cleanup.value
+        _apply_auth_fields(payload, headers=headers, cookies=cookies, basic_auth=basic_auth)
         return payload
 
     def _build_pdf_payload(
@@ -85,6 +109,9 @@ class _BaseClient:
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
     ) -> dict[str, object]:
         payload: dict[str, object] = {
             'format': format.value,
@@ -100,6 +127,7 @@ class _BaseClient:
             payload['html'] = html
         if ai_cleanup is not None:
             payload['ai_cleanup'] = ai_cleanup.value
+        _apply_auth_fields(payload, headers=headers, cookies=cookies, basic_auth=basic_auth)
         return payload
 
 
@@ -215,6 +243,9 @@ class RenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         timeout_fallback_to: str | None = None,
     ) -> bytes:
         payload = self._build_screenshot_payload(
@@ -227,6 +258,9 @@ class RenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
         )
         try:
             return self._post('/v1/screenshot', payload).content
@@ -249,6 +283,9 @@ class RenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
         data = self.screenshot_url(
@@ -261,6 +298,9 @@ class RenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
             timeout_fallback_to=timeout_fallback_to,
         )
         dest = pathlib.Path(output_path)
@@ -279,6 +319,9 @@ class RenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
     ) -> bytes:
         payload = self._build_screenshot_payload(
             html=html,
@@ -290,6 +333,9 @@ class RenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
         )
         return self._post('/v1/screenshot', payload).content
 
@@ -306,6 +352,9 @@ class RenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
     ) -> pathlib.Path:
         data = self.screenshot_html(
             html,
@@ -317,6 +366,9 @@ class RenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -333,6 +385,9 @@ class RenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         timeout_fallback_to: str | None = None,
     ) -> bytes:
         payload = self._build_pdf_payload(
@@ -344,6 +399,9 @@ class RenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
         )
         try:
             return self._post('/v1/pdf', payload).content
@@ -365,6 +423,9 @@ class RenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
         data = self.pdf_url(
@@ -376,6 +437,9 @@ class RenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
             timeout_fallback_to=timeout_fallback_to,
         )
         dest = pathlib.Path(output_path)
@@ -393,6 +457,9 @@ class RenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
     ) -> bytes:
         payload = self._build_pdf_payload(
             html=html,
@@ -403,6 +470,9 @@ class RenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
         )
         return self._post('/v1/pdf', payload).content
 
@@ -418,6 +488,9 @@ class RenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
     ) -> pathlib.Path:
         data = self.pdf_html(
             html,
@@ -428,6 +501,9 @@ class RenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -453,6 +529,9 @@ class RenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -470,6 +549,9 @@ class RenderShotClient(_BaseClient):
                     wait_for=wait_for,
                     delay_ms=delay_ms,
                     ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
                 ),
                 'type': 'screenshot',
             }
@@ -493,6 +575,9 @@ class RenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -509,6 +594,9 @@ class RenderShotClient(_BaseClient):
                     wait_for=wait_for,
                     delay_ms=delay_ms,
                     ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
                 ),
                 'type': 'screenshot',
             }
@@ -529,6 +617,9 @@ class RenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -545,6 +636,9 @@ class RenderShotClient(_BaseClient):
                     wait_for=wait_for,
                     delay_ms=delay_ms,
                     ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
                 ),
                 'type': 'pdf',
             }
@@ -566,6 +660,9 @@ class RenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -581,6 +678,9 @@ class RenderShotClient(_BaseClient):
                     wait_for=wait_for,
                     delay_ms=delay_ms,
                     ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
                 ),
                 'type': 'pdf',
             }
@@ -601,6 +701,9 @@ class RenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -618,6 +721,9 @@ class RenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
             poll_interval=poll_interval,
             timeout=timeout,
             filenames=filenames,
@@ -738,6 +844,9 @@ class AsyncRenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         timeout_fallback_to: str | None = None,
     ) -> bytes:
         payload = self._build_screenshot_payload(
@@ -750,6 +859,9 @@ class AsyncRenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
         )
         try:
             return (await self._post('/v1/screenshot', payload)).content
@@ -772,6 +884,9 @@ class AsyncRenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
         data = await self.screenshot_url(
@@ -784,6 +899,9 @@ class AsyncRenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
             timeout_fallback_to=timeout_fallback_to,
         )
         dest = pathlib.Path(output_path)
@@ -802,6 +920,9 @@ class AsyncRenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
     ) -> bytes:
         payload = self._build_screenshot_payload(
             html=html,
@@ -813,6 +934,9 @@ class AsyncRenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
         )
         return (await self._post('/v1/screenshot', payload)).content
 
@@ -829,6 +953,9 @@ class AsyncRenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
     ) -> pathlib.Path:
         data = await self.screenshot_html(
             html,
@@ -840,6 +967,9 @@ class AsyncRenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -856,6 +986,9 @@ class AsyncRenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         timeout_fallback_to: str | None = None,
     ) -> bytes:
         payload = self._build_pdf_payload(
@@ -867,6 +1000,9 @@ class AsyncRenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
         )
         try:
             return (await self._post('/v1/pdf', payload)).content
@@ -888,6 +1024,9 @@ class AsyncRenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         timeout_fallback_to: str | None = None,
     ) -> pathlib.Path:
         data = await self.pdf_url(
@@ -899,6 +1038,9 @@ class AsyncRenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
             timeout_fallback_to=timeout_fallback_to,
         )
         dest = pathlib.Path(output_path)
@@ -916,6 +1058,9 @@ class AsyncRenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
     ) -> bytes:
         payload = self._build_pdf_payload(
             html=html,
@@ -926,6 +1071,9 @@ class AsyncRenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
         )
         return (await self._post('/v1/pdf', payload)).content
 
@@ -941,6 +1089,9 @@ class AsyncRenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
     ) -> pathlib.Path:
         data = await self.pdf_html(
             html,
@@ -951,6 +1102,9 @@ class AsyncRenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
         )
         dest = pathlib.Path(output_path)
         dest.write_bytes(data)
@@ -976,6 +1130,9 @@ class AsyncRenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -993,6 +1150,9 @@ class AsyncRenderShotClient(_BaseClient):
                     wait_for=wait_for,
                     delay_ms=delay_ms,
                     ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
                 ),
                 'type': 'screenshot',
             }
@@ -1016,6 +1176,9 @@ class AsyncRenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -1032,6 +1195,9 @@ class AsyncRenderShotClient(_BaseClient):
                     wait_for=wait_for,
                     delay_ms=delay_ms,
                     ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
                 ),
                 'type': 'screenshot',
             }
@@ -1052,6 +1218,9 @@ class AsyncRenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -1068,6 +1237,9 @@ class AsyncRenderShotClient(_BaseClient):
                     wait_for=wait_for,
                     delay_ms=delay_ms,
                     ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
                 ),
                 'type': 'pdf',
             }
@@ -1089,6 +1261,9 @@ class AsyncRenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -1104,6 +1279,9 @@ class AsyncRenderShotClient(_BaseClient):
                     wait_for=wait_for,
                     delay_ms=delay_ms,
                     ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
                 ),
                 'type': 'pdf',
             }
@@ -1124,6 +1302,9 @@ class AsyncRenderShotClient(_BaseClient):
         wait_for: str = 'dom_content_loaded',
         delay_ms: int = 0,
         ai_cleanup: models.AICleanupMode | None = None,
+        headers: dict[str, str] | None = None,
+        cookies: list[models.Cookie] | None = None,
+        basic_auth: models.BasicAuth | None = None,
         poll_interval: float = 2.0,
         timeout: float = 300.0,
         filenames: list[str] | None = None,
@@ -1141,6 +1322,9 @@ class AsyncRenderShotClient(_BaseClient):
             wait_for=wait_for,
             delay_ms=delay_ms,
             ai_cleanup=ai_cleanup,
+            headers=headers,
+            cookies=cookies,
+            basic_auth=basic_auth,
             poll_interval=poll_interval,
             timeout=timeout,
             filenames=filenames,
