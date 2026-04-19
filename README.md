@@ -98,6 +98,66 @@ pdf = client.pdf_url(
 
 Works on all single and bulk methods on both the sync and async clients.
 
+## Authenticated pages
+
+Render pages behind a login by sending custom HTTP headers, session cookies, or HTTP Basic auth alongside the URL. Credentials are never persisted — they only ride on the request payload.
+
+```python
+# Bearer token + session cookie
+png = client.screenshot_url(
+    'https://app.example.com/dashboard',
+    headers={'Authorization': 'Bearer sk_internal_...', 'X-Tenant-Id': 'acme'},
+    cookies=[
+        rendershot.models.Cookie(
+            name='session_id',
+            value='eyJhbGciOi...',
+            domain='app.example.com',
+            path='/',
+            secure=True,
+            http_only=True,
+            same_site=rendershot.models.SameSite.lax,
+        ),
+    ],
+)
+
+# HTTP Basic auth
+pdf = client.pdf_url(
+    'https://staging.example.com/report',
+    basic_auth=rendershot.models.BasicAuth(username='staging', password='hunter2'),
+)
+```
+
+Reserved header names (`Host`, `Cookie`, `Content-Length`, `Sec-*`, `Connection`) are rejected server-side. Max 30 headers / 50 cookies per request; header values up to 2 KB.
+
+## Verifying webhook signatures
+
+Rendershot signs every outbound webhook POST with HMAC-SHA256 over `"{timestamp}.{body}"` using the per-endpoint secret shown on the Webhooks dashboard. Use the SDK helpers in your receiver to reject forged or replayed requests.
+
+```python
+from flask import Flask, request, abort
+import rendershot
+
+WEBHOOK_SECRET = 'your-endpoint-secret'  # from the dashboard
+
+app = Flask(__name__)
+
+@app.post('/rendershot-webhook')
+def receive():
+    ok = rendershot.is_valid_signature(
+        secret=WEBHOOK_SECRET,
+        body=request.data,
+        signature_header=request.headers.get('X-Rendershot-Signature', ''),
+        timestamp_header=request.headers.get('X-Rendershot-Timestamp', ''),
+    )
+    if not ok:
+        abort(400)
+    payload = request.get_json()
+    # ... handle job.completed / job.failed ...
+    return '', 200
+```
+
+`verify_signature` raises `rendershot.WebhookVerificationError` instead of returning a bool if you prefer exception-based flow. Both accept `max_age_seconds=300` (default) to bound replay attacks.
+
 ## Handling network_idle timeouts
 
 Some URLs never reach `network_idle` (e.g. sites with persistent WebSocket connections or infinite polling). Use `timeout_fallback_to='dom_content_loaded'` to automatically retry with `wait_for='dom_content_loaded'` when a timeout occurs:

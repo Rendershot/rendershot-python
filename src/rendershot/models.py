@@ -48,6 +48,53 @@ class MarginParams(pydantic.BaseModel):
     left: str = '1cm'
 
 
+class SameSite(enum.StrEnum):
+    lax = 'Lax'
+    strict = 'Strict'
+    none = 'None'
+
+
+class Cookie(pydantic.BaseModel):
+    """A cookie to inject before page navigation.
+
+    Each cookie needs either ``domain`` or ``url`` (Playwright requirement)."""
+
+    name: str
+    value: str
+    domain: str | None = None
+    path: str | None = None
+    url: str | None = None
+    expires: float | None = None
+    http_only: bool | None = None
+    secure: bool | None = None
+    same_site: SameSite | None = None
+
+    def to_api_payload(self) -> dict[str, object]:
+        out: dict[str, object] = {'name': self.name, 'value': self.value}
+        if self.domain is not None:
+            out['domain'] = self.domain
+        if self.path is not None:
+            out['path'] = self.path
+        if self.url is not None:
+            out['url'] = self.url
+        if self.expires is not None:
+            out['expires'] = self.expires
+        if self.http_only is not None:
+            out['http_only'] = self.http_only
+        if self.secure is not None:
+            out['secure'] = self.secure
+        if self.same_site is not None:
+            out['same_site'] = self.same_site.value
+        return out
+
+
+class BasicAuth(pydantic.BaseModel):
+    """HTTP Basic auth credentials sent on 401 challenge."""
+
+    username: str
+    password: str
+
+
 class CreditBalance(pydantic.BaseModel):
     credits_remaining: int
     plan_id: str
